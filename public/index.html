@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PromptShelf</title>
+<style>
+:root{--bg:#f5f7f8;--panel:#fff;--fg:#14202b;--muted:#5d6b78;--line:#dde3e8;--accent:#0b6e8a;--accent-fg:#fff;--accent-soft:#e1f1f6;--danger:#b3261e;--code:#f0f3f5;
+--ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:ui-monospace,Menlo,Consolas,monospace}
+@media(prefers-color-scheme:dark){:root{--bg:#0f161c;--panel:#161f27;--fg:#e4eaef;--muted:#93a1ad;--line:#27323c;--accent:#4cb8d6;--accent-fg:#06222b;--accent-soft:#12303a;--danger:#f2837c;--code:#0f161c;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 var(--ui)}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{display:flex;gap:12px;align-items:center;padding:10px 0;flex-wrap:wrap}
+.logo{font-weight:700;font-size:18px;letter-spacing:-.02em}
+.search{flex:1;min-width:180px}
+.field{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+textarea.field{font-family:var(--mono);font-size:13px;min-height:200px;resize:vertical}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 12px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn.danger{color:var(--danger)}
+.btn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tabs{display:flex;gap:4px;border-top:1px solid var(--line);padding-top:6px}
+.tab{border:0;background:none;padding:6px 12px;border-radius:6px;color:var(--muted);font-weight:500}
+.tab.on{background:var(--accent-soft);color:var(--accent)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:14px 0 6px}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 12px;font-size:13px;color:var(--muted)}
+.chip.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tools{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0 12px;color:var(--muted);flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{margin:0;font-size:15px;line-height:1.3;cursor:pointer}
+.card h3:hover{color:var(--accent)}
+.card p{margin:0;color:var(--muted);font-size:13px}
+.meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted)}
+.tag{background:var(--accent-soft);color:var(--accent);border-radius:4px;padding:1px 7px;font-size:12px;border:0}
+.spacer{flex:1}
+.empty{color:var(--muted);text-align:center;padding:40px 0}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);width:min(680px,calc(100vw - 24px));padding:18px;max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h2{margin:0 0 10px;font-size:17px}
+pre.body{white-space:pre-wrap;word-break:break-word;background:var(--code);border:1px solid var(--line);border-radius:6px;padding:12px;font:13px/1.55 var(--mono);max-height:42vh;overflow:auto;margin:8px 0}
+label.l{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:10px 0 4px}
+.msg{font-size:13px;color:var(--muted);min-height:20px}.msg.err{color:var(--danger)}
+.vars{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px}
+.pager{display:flex;justify-content:center;gap:10px;align-items:center;padding:16px 0 40px;color:var(--muted)}
+.badge{font-size:11px;border:1px solid var(--line);border-radius:4px;padding:0 6px}
+ul.ch{margin:6px 0 0;padding-left:18px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="bar">
+    <span class="logo">PromptShelf</span>
+    <input class="field search" id="q" type="search" placeholder="Search prompts" aria-label="Search prompts">
+    <button class="btn primary" id="submitBtn">Submit prompt</button>
+    <span id="acct" class="row"></span>
+  </div>
+  <nav class="tabs" id="tabs"></nav>
+</div></header>
+
+<main class="wrap">
+  <div class="chips" id="chips"></div>
+  <div class="tools"><span id="count"></span>
+    <span class="row"><span id="tagNote"></span>
+    <label for="sort">Sort</label>
+    <select id="sort" class="field" style="width:auto"><option value="new">Newest</option><option value="popular">Most liked</option><option value="copied">Most copied</option></select></span>
+  </div>
+  <div id="adminTools" hidden class="row" style="padding-bottom:12px">
+    <button class="btn" id="importBtn">Import JSON</button>
+    <input type="file" id="importFile" accept=".json,application/json" hidden>
+    <span class="msg" id="adminMsg"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="pager" id="pager"></div>
+</main>
+
+<dialog id="viewDlg"></dialog>
+
+<dialog id="authDlg">
+  <h2 id="authTitle">Log in</h2>
+  <form id="authForm">
+    <div id="nameWrap" hidden><label class="l" for="aName">Name</label><input class="field" id="aName" autocomplete="name"></div>
+    <label class="l" for="aEmail">Email</label><input class="field" id="aEmail" type="email" autocomplete="email" required>
+    <label class="l" for="aPass">Password (8+ characters)</label><input class="field" id="aPass" type="password" autocomplete="current-password" required>
+    <div class="msg" id="authMsg"></div>
+    <div class="row"><button class="btn primary" type="submit" id="authGo">Log in</button>
+      <button class="btn" type="button" id="authSwap">Create account</button><span class="spacer"></span>
+      <button class="btn" type="button" data-close="authDlg">Cancel</button></div>
+  </form>
+</dialog>
+
+<dialog id="editDlg">
+  <h2 id="editTitle">Submit a prompt</h2>
+  <form id="editForm">
+    <label class="l" for="eTitle">Title</label><input class="field" id="eTitle" maxlength="120" required>
+    <label class="l" for="eDesc">One-line description</label><input class="field" id="eDesc" maxlength="300">
+    <div class="row" style="align-items:flex-start">
+      <div style="flex:1;min-width:160px"><label class="l" for="eCat">Category</label><select class="field" id="eCat"></select></div>
+      <div style="flex:1;min-width:160px"><label class="l" for="eTags">Tags (comma separated)</label><input class="field" id="eTags"></div>
+    </div>
+    <label class="l" for="eBody">Prompt. Use {{variable}} for fill-ins</label>
+    <textarea class="field" id="eBody" required></textarea>
+    <div id="impOut" hidden><label class="l">Improved version</label><pre class="body" id="impText"></pre><ul class="ch" id="impCh"></ul>
+      <div class="row" style="margin-top:8px"><button class="btn primary" type="button" id="impUse">Use this version</button><button class="btn" type="button" id="impNo">Discard</button></div></div>
+    <div class="msg" id="editMsg"></div>
+    <div class="row"><button class="btn primary" type="submit">Submit</button>
+      <button class="btn" type="button" id="improveBtn">Improve prompt</button><span class="spacer"></span>
+      <button class="btn" type="button" data-close="editDlg">Cancel</button></div>
+  </form>
+</dialog>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const S = { user: null, token: localStorage.getItem('ps_token') || '', tab: 'explore', category: '', tag: '', sort: 'new', q: '', page: 1, cats: [], editId: null, imp: null };
+
+async function api(path, opts = {}) {
+  const h = { 'content-type': 'application/json' };
+  if (S.token) h.authorization = 'Bearer ' + S.token;
+  const r = await fetch('/api' + path, { ...opts, headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error || 'Request failed'); e.status = r.status; throw e; }
+  return j;
+}
+const el = (tag, props = {}, ...kids) => {
+  const e = document.createElement(tag);
+  Object.entries(props).forEach(([k, v]) => { if (k === 'class') e.className = v; else if (k.startsWith('on')) e[k] = v; else e.setAttribute(k, v); });
+  kids.flat().forEach((c) => e.append(c));
+  return e;
+};
+const catName = (s) => (S.cats.find((c) => c.slug === s) || {}).name || s;
+const varsOf = (t) => [...new Set([...t.matchAll(/\{\{\s*([\w.-]+)\s*\}\}/g)].map((m) => m[1]))];
+function copy(text) {
+  return navigator.clipboard.writeText(text).catch(() => {
+    const ta = el('textarea'); ta.value = text; document.body.append(ta); ta.select(); document.execCommand('copy'); ta.remove();
+  });
+}
+document.addEventListener('click', (e) => { const c = e.target.closest('[data-close]'); if (c) $(c.dataset.close).close(); });
+
+/* ---------- auth ---------- */
+function renderAcct() {
+  const a = $('acct'); a.replaceChildren();
+  if (S.user) a.append(el('span', { class: 'meta' }, S.user.name + (S.user.role === 'admin' ? ' (admin)' : '')), el('button', { class: 'btn', onclick: logout }, 'Log out'));
+  else a.append(el('button', { class: 'btn', onclick: () => openAuth(false) }, 'Log in'));
+  const tabs = [['explore', 'Explore']]; if (S.user) tabs.push(['saved', 'Saved'], ['mine', 'My prompts']); if (S.user && S.user.role === 'admin') tabs.push(['pending', 'Review queue']);
+  const t = $('tabs'); t.replaceChildren(...tabs.map(([k, n]) => el('button', { class: 'tab' + (S.tab === k ? ' on' : ''), onclick: () => { S.tab = k; S.page = 1; renderAcct(); load(); } }, n)));
+  $('adminTools').hidden = !(S.user && S.user.role === 'admin');
+}
+let signup = false;
+function openAuth(su) { signup = su; $('authTitle').textContent = su ? 'Create account' : 'Log in'; $('authGo').textContent = su ? 'Create account' : 'Log in'; $('authSwap').textContent = su ? 'I have an account' : 'Create account'; $('nameWrap').hidden = !su; $('authMsg').textContent = ''; $('authDlg').showModal(); }
+$('authSwap').onclick = () => openAuth(!signup);
+$('authForm').onsubmit = async (e) => {
+  e.preventDefault(); $('authMsg').textContent = '';
+  try {
+    const body = { email: $('aEmail').value, password: $('aPass').value, name: $('aName').value };
+    const r = await api(signup ? '/auth/register' : '/auth/login', { method: 'POST', body });
+    S.token = r.token; S.user = r.user; localStorage.setItem('ps_token', r.token);
+    $('authDlg').close(); $('aPass').value = ''; renderAcct(); load();
+  } catch (err) { $('authMsg').textContent = err.message; $('authMsg').className = 'msg err'; }
+};
+function logout() { S.token = ''; S.user = null; localStorage.removeItem('ps_token'); S.tab = 'explore'; renderAcct(); load(); }
+
+/* ---------- list ---------- */
+async function load() {
+  let path, items, total = null;
+  try {
+    if (S.tab === 'explore') {
+      const p = new URLSearchParams({ sort: S.sort, page: S.page, limit: 12 });
+      if (S.q) p.set('q', S.q); if (S.category) p.set('category', S.category); if (S.tag) p.set('tag', S.tag);
+      const r = await api('/prompts?' + p); items = r.items; total = r.total;
+    } else if (S.tab === 'saved') items = (await api('/me/saved')).items;
+    else if (S.tab === 'mine') items = (await api('/me/prompts')).items;
+    else items = (await api('/admin/pending')).items;
+  } catch (err) { $('grid').replaceChildren(el('div', { class: 'empty' }, err.message)); return; }
+  $('chips').hidden = S.tab !== 'explore';
+  $('count').textContent = total != null ? total + ' prompt' + (total === 1 ? '' : 's') : items.length + ' prompt' + (items.length === 1 ? '' : 's');
+  $('tagNote').replaceChildren(S.tag ? el('button', { class: 'chip on', onclick: () => { S.tag = ''; S.page = 1; load(); } }, '#' + S.tag + ' ✕') : '');
+  $('grid').replaceChildren(...(items.length ? items.map(card) : [el('div', { class: 'empty' }, S.tab === 'explore' ? 'No prompts match.' : 'Nothing here yet.')]));
+  const pages = total != null ? Math.ceil(total / 12) : 1;
+  $('pager').replaceChildren(...(pages > 1 ? [el('button', { class: 'btn', onclick: () => { S.page--; load(); scrollTo(0, 0); }, ...(S.page <= 1 ? { disabled: '' } : {}) }, 'Previous'), 'Page ' + S.page + ' of ' + pages, el('button', { class: 'btn', onclick: () => { S.page++; load(); scrollTo(0, 0); }, ...(S.page >= pages ? { disabled: '' } : {}) }, 'Next')] : []));
+}
+function card(p) {
+  const c = el('div', { class: 'card' },
+    el('h3', { onclick: () => openView(p.id) }, p.title),
+    el('p', {}, p.description || p.body.slice(0, 110) + (p.body.length > 110 ? '…' : '')),
+    el('div', { class: 'meta' }, el('span', { class: 'badge' }, catName(p.category)), ...p.tags.slice(0, 3).map((t) => el('button', { class: 'tag', onclick: () => { S.tab = 'explore'; S.tag = t; S.page = 1; renderAcct(); load(); } }, '#' + t)), p.status !== 'approved' ? el('span', { class: 'badge' }, p.status) : ''),
+    el('div', { class: 'row' },
+      el('button', { class: 'btn', onclick: async (e) => { await copy(p.body); e.target.textContent = 'Copied'; api('/prompts/' + p.id + '/copy', { method: 'POST' }).catch(() => {}); } }, 'Copy'),
+      el('button', { class: 'btn' + (p.liked ? ' on' : ''), onclick: (e) => act(p, 'like', e.target) }, '♥ ' + p.likes),
+      el('button', { class: 'btn' + (p.saved ? ' on' : ''), onclick: (e) => act(p, 'save', e.target) }, p.saved ? 'Saved' : 'Save'),
+      el('span', { class: 'spacer' }), el('span', { class: 'meta' }, p.copies + ' copies')));
+  if (S.tab === 'pending') c.append(el('div', { class: 'row' },
+    el('button', { class: 'btn primary', onclick: () => review(p.id, 'approve') }, 'Approve'), el('button', { class: 'btn danger', onclick: () => review(p.id, 'reject') }, 'Reject')));
+  if (S.tab === 'mine') c.append(el('div', { class: 'row' },
+    el('button', { class: 'btn', onclick: () => openEdit(p) }, 'Edit'), el('button', { class: 'btn danger', onclick: () => del(p.id) }, 'Delete')));
+  return c;
+}
+async function act(p, what, btn) {
+  if (!S.user) return openAuth(false);
+  try { const r = await api('/prompts/' + p.id + '/' + what, { method: 'POST' }); p[what === 'like' ? 'liked' : 'saved'] = r.on; if (what === 'like') p.likes = r.likes; load(); } catch (e) { if (btn) btn.title = e.message; }
+}
+async function review(id, a) { await api('/admin/prompts/' + id + '/' + a, { method: 'POST' }); load(); }
+async function del(id) { if (!confirm('Delete this prompt?')) return; await api('/prompts/' + id, { method: 'DELETE' }); load(); }
+
+/* ---------- view dialog with variable fill-in ---------- */
+async function openView(id) {
+  let p; try { p = await api('/prompts/' + id); } catch (e) { return; }
+  const d = $('viewDlg'), vs = varsOf(p.body), inputs = {};
+  const pre = el('pre', { class: 'body' });
+  const fill = () => { pre.textContent = p.body.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (m, k) => (inputs[k] && inputs[k].value) || m); };
+  const form = el('div', { class: 'vars' }, ...vs.map((v) => { const i = el('input', { class: 'field', id: 'v_' + v, 'aria-label': v, placeholder: v }); i.oninput = fill; inputs[v] = i; return i; }));
+  fill();
+  d.replaceChildren(el('h2', {}, p.title), el('p', { class: 'meta' }, catName(p.category) + ' · by ' + p.author), el('p', {}, p.description),
+    vs.length ? el('label', { class: 'l' }, 'Fill variables') : '', vs.length ? form : '', pre,
+    el('div', { class: 'row' }, el('button', { class: 'btn primary', onclick: async (e) => { await copy(pre.textContent); e.target.textContent = 'Copied'; api('/prompts/' + p.id + '/copy', { method: 'POST' }).catch(() => {}); } }, 'Copy'),
+      el('button', { class: 'btn' + (p.liked ? ' on' : ''), onclick: async () => { await act(p, 'like'); d.close(); } }, '♥ ' + p.likes),
+      el('span', { class: 'spacer' }), el('button', { class: 'btn', onclick: () => d.close() }, 'Close')));
+  d.showModal();
+}
+
+/* ---------- submit / edit / improve ---------- */
+function openEdit(p) {
+  if (!S.user) return openAuth(false);
+  S.editId = p ? p.id : null; S.imp = null; $('impOut').hidden = true; $('editMsg').textContent = '';
+  $('editTitle').textContent = p ? 'Edit prompt' : 'Submit a prompt';
+  $('eTitle').value = p ? p.title : ''; $('eDesc').value = p ? p.description : ''; $('eCat').value = p ? p.category : S.cats[0].slug;
+  $('eTags').value = p ? p.tags.join(', ') : ''; $('eBody').value = p ? p.body : ''; $('editDlg').showModal();
+}
+$('submitBtn').onclick = () => openEdit(null);
+$('editForm').onsubmit = async (e) => {
+  e.preventDefault();
+  const body = { title: $('eTitle').value, description: $('eDesc').value, category: $('eCat').value, tags: $('eTags').value, body: $('eBody').value };
+  try {
+    const r = await api(S.editId ? '/prompts/' + S.editId : '/prompts', { method: S.editId ? 'PUT' : 'POST', body });
+    $('editDlg').close(); alert(r.status === 'approved' ? 'Published.' : 'Submitted for review.'); load();
+  } catch (err) { $('editMsg').textContent = err.message; $('editMsg').className = 'msg err'; }
+};
+$('improveBtn').onclick = async (e) => {
+  const b = e.target; b.disabled = true; b.textContent = 'Improving…'; $('editMsg').textContent = ''; $('editMsg').className = 'msg';
+  try {
+    const r = await api('/ai/improve', { method: 'POST', body: { prompt: $('eBody').value } }); S.imp = r;
+    $('impText').textContent = r.improved; $('impCh').replaceChildren(...r.changes.map((c) => el('li', {}, c))); $('impOut').hidden = false;
+  } catch (err) { $('editMsg').textContent = err.message; $('editMsg').className = 'msg err'; }
+  b.disabled = false; b.textContent = 'Improve prompt';
+};
+$('impUse').onclick = () => { if (S.imp) $('eBody').value = S.imp.improved; $('impOut').hidden = true; };
+$('impNo').onclick = () => { $('impOut').hidden = true; };
+
+/* ---------- admin import ---------- */
+$('importBtn').onclick = () => $('importFile').click();
+$('importFile').onchange = async function () {
+  const f = this.files[0]; if (!f) return;
+  try { const r = await api('/admin/import', { method: 'POST', body: JSON.parse(await f.text()) }); $('adminMsg').textContent = 'Imported ' + r.added + ' (category: productivity, edit later).'; load(); }
+  catch (e) { $('adminMsg').textContent = 'Import failed: ' + e.message; }
+  this.value = '';
+};
+
+/* ---------- init ---------- */
+let qt;
+$('q').oninput = (e) => { clearTimeout(qt); qt = setTimeout(() => { S.q = e.target.value; S.page = 1; S.tab = 'explore'; renderAcct(); load(); }, 250); };
+$('sort').onchange = (e) => { S.sort = e.target.value; S.page = 1; load(); };
+(async () => {
+  S.cats = await api('/categories');
+  $('eCat').replaceChildren(...S.cats.map((c) => el('option', { value: c.slug }, c.name)));
+  $('chips').replaceChildren(...[{ slug: '', name: 'All' }, ...S.cats].map((c) => el('button', { class: 'chip' + (S.category === c.slug ? ' on' : ''), onclick: function () { S.category = c.slug; S.page = 1; [...$('chips').children].forEach((x) => x.classList.remove('on')); this.classList.add('on'); load(); } }, c.name + (c.count ? ' ' + c.count : ''))));
+  $('chips').firstChild.classList.add('on');
+  if (S.token) { try { S.user = (await api('/auth/me')).user; } catch (_) { S.token = ''; localStorage.removeItem('ps_token'); } }
+  renderAcct(); load();
+})();
+</script>
+</body>
+</html>
